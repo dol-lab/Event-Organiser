@@ -3,7 +3,7 @@ Contributors: stephenharris
 Donate link: http://www.wp-event-organiser.com/donate
 Tags: events, event, event categories, event organizer, events calendar, event management, ical, locations, google map, OpenStreetMap, widget, venues, maps, gigs, shows,
 Requires at least: 3.8.0
-Tested up to: 5.8.1
+Tested up to: 6.6.2
 Stable tag: {{version}}
 License: GPLv3
 
@@ -222,6 +222,55 @@ More information on shortcodes is [available here](http://wp-event-organiser.com
 
 == Changelog ==
 
+
+= 3.12.8 - 26th August 2024
+* Bugfix: Fixes interoperability with Real Consent banner
+* Bugfix: Fixes PHP 8 warning messages
+
+= 3.12.7 - 26th August 2024
+* Security patch: Bump version of moment.js
+
+= 3.12.6 - 14th July 2024
+* Fixed PHP 8.1 deprecation notices
+
+= 3.12.5 - 24th February 2024
+* Security patch: Disables cache of public calendars (can be re-enabled with the following code)
+
+    ```
+    add_filter('eventorganiser_cache_expiration_eo_widget_calendar', function(){
+      return DAY_IN_SECONDS;
+    });
+
+    add_filter('eventorganiser_cache_expiration_eo_widget_agenda', function(){
+        return DAY_IN_SECONDS;
+    });
+
+    add_filter('eventorganiser_cache_expiration_eo_full_calendar_public', function(){
+        return DAY_IN_SECONDS;
+    });
+    ```
+
+= 3.12.4 - 2nd October 2023 =
+* fix: php 8.2 warnings
+
+= 3.12.3 - 11th March 2023 =
+* fix: integer overflow bug with theme compatbility template handling
+
+= 3.12.2 - 15th November 2022 =
+* fix: bug with admin calendar not rendering correctly in WordPress 6.1
+
+= 3.12.1 - 28th September 2022 =
+* fix: static method called dynamically
+
+= 3.12.0 - 30th March 2022 =
+* feat: Add %event_organiser_url% placeholder for event list shortcode (url of the event's organiser)
+
+= 3.11.1 - 30th March 2022 =
+* bugfix: Fix "InvalidValueError: setIcon: not a string..." error with Google Maps
+
+= 3.11.0 - 10th March 2022 =
+* bugfix: Add support for PHP 8+
+
 = 3.10.8 - 13th October 2021 =
 * bugfix: Close open tooltip windows when opening tooltip..
 
@@ -251,7 +300,7 @@ More information on shortcodes is [available here](http://wp-event-organiser.com
 = 3.10.0 - 22nd July 2020 =
 * feature: Extended support for RECURRENCE-ID in iCal calendards
 * bugfix: Ensure translated screen help text is escaped
-* bugfix: Replace instances of curly braces for array access (deprecated PHP 7). 
+* bugfix: Replace instances of curly braces for array access (deprecated PHP 7).
 
 = 3.9.1 - 28th May 2020 =
 * bugfix: Fixed bug where venue can't be changed if maps are disabled
@@ -289,7 +338,7 @@ More information on shortcodes is [available here](http://wp-event-organiser.com
 
 = 3.7.6 - 6th March 2019 =
 * bugfix: Fixed missing translations
-* bugfix: Fix tags and categories not appearing in Gutenberg 
+* bugfix: Fix tags and categories not appearing in Gutenberg
 
 = 3.7.5 - 1st March 2019 =
 * feature: Added eventorganiser_pre_insert_venue filter
