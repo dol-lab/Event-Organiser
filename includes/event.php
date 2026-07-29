@@ -369,6 +369,34 @@ function _eventorganiser_insert_occurrences( $post_id, $event_data ) {
 	$update_2 = array_uintersect( $current_occurrences, $update, '_eventorganiser_compare_dates' );
 	$keys     = array_keys( $update_2 );
 
+	//Fix for array_combine mismatch when multiple occurrences fall on the same day
+	if ( count( $update ) !== count( $keys ) ) {
+		$update_values = array_values( $update );
+		$update_keys   = array_values( $keys );
+
+		$count_values = count( $update_values );
+		$count_keys   = count( $update_keys );
+		$common       = min( $count_values, $count_keys );
+
+		if ( $count_values > $count_keys ) {
+			//More new occurrences than old: the extras are inserts
+			$extra_inserts = array_slice( $update_values, $common );
+			foreach ( $extra_inserts as $extra ) {
+				$insert[] = $extra;
+			}
+		} elseif ( $count_keys > $count_values ) {
+			//More old occurrences than new: the extras are deletes
+			$extra_deletes_keys = array_slice( $update_keys, $common );
+			foreach ( $extra_deletes_keys as $del_key ) {
+				$delete[$del_key] = $update_2[$del_key];
+			}
+		}
+
+		//Keep only the occurrences that map onto each other
+		$update = array_slice( $update_values, 0, $common );
+		$keys   = array_slice( $update_keys, 0, $common );
+	}
+
 	if ( $delete ) {
 		$delete_occurrence_ids = array_keys( $delete );
 		eo_delete_event_occurrences( $post_id, $delete_occurrence_ids );

@@ -117,17 +117,35 @@ function eventorganiser_init_notice_handler() {
 }
 add_action( 'plugins_loaded', 'eventorganiser_init_notice_handler' );
 
-global $eventorganiser_roles;
-$eventorganiser_roles = array(
-	'edit_events' => __( 'Edit Events', 'eventorganiser' ),
-	'publish_events' => __( 'Publish Events', 'eventorganiser' ),
-	'delete_events' => __( 'Delete Events', 'eventorganiser' ),
-	'edit_others_events' => __( 'Edit Others\' Events', 'eventorganiser' ),
-	'delete_others_events' => __( 'Delete Other\'s Events', 'eventorganiser' ),
-	'read_private_events' => __( 'Read Private Events', 'eventorganiser' ),
-	'manage_venues' => __( 'Manage Venues', 'eventorganiser' ),
-	'manage_event_categories' => __( 'Manage Event Categories & Tags', 'eventorganiser' ),
-);
+/**
+ * Returns the plug-in's capabilities, indexed by capability, with their labels.
+ *
+ * The labels are translated, so this must not run before `init`: building them
+ * at load time triggers "Function _load_textdomain_just_in_time was called
+ * incorrectly" (WP 6.7+). Previously stored in the $eventorganiser_roles global.
+ *
+ * @since 3.12.8
+ * @return array Capabilities, indexed by capability, with their labels.
+ */
+function get_eventorganiser_roles() {
+	$roles = array(
+		'edit_events' => __( 'Edit Events', 'eventorganiser' ),
+		'publish_events' => __( 'Publish Events', 'eventorganiser' ),
+		'delete_events' => __( 'Delete Events', 'eventorganiser' ),
+		'edit_others_events' => __( 'Edit Others\' Events', 'eventorganiser' ),
+		'delete_others_events' => __( 'Delete Other\'s Events', 'eventorganiser' ),
+		'read_private_events' => __( 'Read Private Events', 'eventorganiser' ),
+		'manage_venues' => __( 'Manage Venues', 'eventorganiser' ),
+		'manage_event_categories' => __( 'Manage Event Categories & Tags', 'eventorganiser' ),
+	);
+
+	$supports = (array) eventorganiser_get_option( 'supports' );
+	if ( !in_array( 'event-venue', $supports ) ) {
+		unset( $roles['manage_venues'] );
+	}
+
+	return $roles;
+}
 
 /****** Install, activation & deactivation******/
 require_once( EVENT_ORGANISER_DIR . 'includes/event-organiser-install.php' );

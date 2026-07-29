@@ -8,8 +8,6 @@ if ( !class_exists( 'EventOrganiser_Admin_Page' ) ){
  */
 class EventOrganiser_Settings_Page extends EventOrganiser_Admin_Page{
 
-	static $eventorganiser_roles;
-
 	private $tabs = [];
 
 	/**
@@ -43,21 +41,6 @@ class EventOrganiser_Settings_Page extends EventOrganiser_Admin_Page{
 		$this->menu = __( 'Event Organiser', 'eventorganiser' );
 		$this->permissions = 'manage_options';
 		$this->slug = 'event-settings';
-
-		self::$eventorganiser_roles = array(
-				'edit_events' => __( 'Edit Events', 'eventorganiser' ),
-				'publish_events' => __( 'Publish Events', 'eventorganiser' ),
-				'delete_events' => __( 'Delete Events', 'eventorganiser' ),
-				'edit_others_events' => __( 'Edit Others\' Events', 'eventorganiser' ),
-				'delete_others_events' => __( 'Delete Other\'s Events', 'eventorganiser' ),
-				'read_private_events' => __( 'Read Private Events', 'eventorganiser' ),
-				'manage_venues' => __( 'Manage Venues', 'eventorganiser' ),
-				'manage_event_categories' => __( 'Manage Event Categories & Tags', 'eventorganiser' ),
-		);
-		$supports = eventorganiser_get_option( 'supports' );
-		if( !in_array( 'event-venue', $supports ) ){
-			unset( self::$eventorganiser_roles['manage_venues'] );
-		}
 
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
@@ -574,6 +557,8 @@ class EventOrganiser_Settings_Page extends EventOrganiser_Admin_Page{
 	function update_roles( $permissions ){
 		global $wp_roles,$EO_Errors;
 
+		$eventorganiser_roles = get_eventorganiser_roles();
+
 		foreach ( get_editable_roles() as $role_name => $display_name ):
 			$role = $wp_roles->get_role( $role_name );
 			//Don't edit the administrator
@@ -581,7 +566,7 @@ class EventOrganiser_Settings_Page extends EventOrganiser_Admin_Page{
 				continue;
 
 			//Foreach custom role, add or remove option.
-			foreach ( self::$eventorganiser_roles as $eo_role => $eo_role_display ):
+			foreach ( $eventorganiser_roles as $eo_role => $eo_role_display ):
 				if ( isset( $permissions[$role_name][$eo_role] ) && $permissions[$role_name][$eo_role] == 1 ){
 					$role->add_cap( $eo_role );
 				} else {
@@ -698,6 +683,8 @@ class EventOrganiser_Settings_Page extends EventOrganiser_Admin_Page{
 	function display_permissions() {
 		global $wp_roles;
 
+		$eventorganiser_roles = get_eventorganiser_roles();
+
 		?>
 		<h4><?php esc_html_e( 'Event management permissions', 'eventorganiser' ); ?></h4>
 		<p><?php esc_html_e( 'Set permissions for events and venue management', 'eventorganiser' ); ?></p>
@@ -706,7 +693,7 @@ class EventOrganiser_Settings_Page extends EventOrganiser_Admin_Page{
 			<thead>
 			<tr>
 				<th><?php esc_html_e( 'Role', 'eventorganiser' ); ?></th>
-				<?php foreach ( self::$eventorganiser_roles as $eo_role => $eo_role_display ) : ?>
+				<?php foreach ( $eventorganiser_roles as $eo_role => $eo_role_display ) : ?>
 					<th><?php echo esc_html( $eo_role_display );?></th>
 				<?php endforeach; ?>
 			</tr>
@@ -721,7 +708,7 @@ class EventOrganiser_Settings_Page extends EventOrganiser_Admin_Page{
 				printf( '<tr %s>', 0 == $array_index ? 'class="alternate"' : '' );
 				printf( '<td> %s </td>',esc_html( $role_name ) );
 
-				foreach ( self::$eventorganiser_roles as $eo_role => $eo_role_display ) :
+				foreach ( $eventorganiser_roles as $eo_role => $eo_role_display ) :
 					printf(
 						'<td>
 							<input type="checkbox" name="eventorganiser_options[permissions][%s][%s]" value="1" %s %s  />
