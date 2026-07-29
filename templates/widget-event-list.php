@@ -22,7 +22,7 @@
 global $eo_event_loop,$eo_event_loop_args;
 
 //The list ID / classes
-$id      = ( $eo_event_loop_args['id'] ? 'id="' . $eo_event_loop_args['id'] . '"' : '' );
+$id      = ( $eo_event_loop_args['id'] ? 'id="' . (esc_attr($eo_event_loop_args['id'])) . '"' : '' );
 $classes = $eo_event_loop_args['class'];
 ?>
 
@@ -51,7 +51,7 @@ $classes = $eo_event_loop_args['class'];
 <?php elseif ( ! empty( $eo_event_loop_args['no_events'] ) ) :  ?>
 
 	<ul id="<?php echo esc_attr( $id );?>" class="<?php echo esc_attr( $classes );?>" > 
-		<li class="eo-no-events" > <?php echo $eo_event_loop_args['no_events']; ?> </li>
+		<li class="eo-no-events" > <?php echo wp_kses_post($eo_event_loop_args['no_events']); ?> </li>
 	</ul>
 
 <?php endif;
