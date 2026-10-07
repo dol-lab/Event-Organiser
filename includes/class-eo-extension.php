@@ -16,7 +16,7 @@ if ( ! class_exists( 'EO_Extension' ) ) {
 
 		public $public_url;
 
-		public $api_url = 'http://wp-event-organiser.com';
+		public $api_url = 'https://wp-event-organiser.com';
 
 		public $id;
 
@@ -233,7 +233,7 @@ if ( ! class_exists( 'EO_Extension' ) ) {
 				return new WP_Error( 'invalid-response' );
 			}
 
-			$response = maybe_unserialize( $body['response'] );
+			$response = (array) self::safe_unserialize( $body['response'] );
 
 			update_option( $this->id . '_plm_local_key', $body );
 
@@ -424,7 +424,9 @@ if ( ! class_exists( 'EO_Extension' ) ) {
 			$plugin_info = $this->get_remote_plugin_info( 'plugin_info' );
 
 			// If a newer version is available, add the update
-			if ( $plugin_info && version_compare( $this->get_current_version(), $plugin_info->new_version, '<' ) ) {
+			if ( $plugin_info && ! empty( $plugin_info->new_version )
+				&& version_compare( $this->get_current_version(), $plugin_info->new_version, '<' )
+				&& $this->is_allowed_package_url( isset( $plugin_info->download_link ) ? $plugin_info->download_link : '' ) ) {
 
 				$obj = new stdClass();
 				$obj->slug        = basename( $this->slug, '.php' );
@@ -443,6 +445,40 @@ if ( ! class_exists( 'EO_Extension' ) ) {
 			return $transient;
 		}
 
+
+		/**
+		 * Unserialize a response of the update server without instantiating classes.
+		 *
+		 * The server is reached over the network, so its answer is untrusted input: only plain
+		 * data (and stdClass, which the API uses) may come back, never a class whose magic
+		 * methods would run here.
+		 *
+		 * @param mixed $data The raw response body.
+		 * @return mixed
+		 */
+		protected static function safe_unserialize( $data ) {
+			if ( is_string( $data ) && is_serialized( $data ) ) {
+				return @unserialize( trim( $data ), array( 'allowed_classes' => array( 'stdClass' ) ) );
+			}
+			return $data;
+		}
+
+		/**
+		 * Whether an update package may be downloaded from this URL.
+		 *
+		 * The package location comes from the response, so it must stay on the API host and
+		 * must not downgrade to plain HTTP.
+		 *
+		 * @param string $url The download link the server returned.
+		 * @return bool
+		 */
+		protected function is_allowed_package_url( $url ) {
+			$url  = (string) $url;
+			$host = wp_parse_url( $url, PHP_URL_HOST );
+			return 'https' === wp_parse_url( $url, PHP_URL_SCHEME )
+				&& $host
+				&& strtolower( $host ) === strtolower( (string) wp_parse_url( $this->api_url, PHP_URL_HOST ) );
+		}
 
 		/**
 		 * Return remote data
@@ -469,9 +505,15 @@ if ( ! class_exists( 'EO_Extension' ) ) {
 				),
 			));
 
-			if ( ! is_wp_error( $request ) || wp_remote_retrieve_response_code( $request ) === 200 ) {
+			if ( ! is_wp_error( $request ) && wp_remote_retrieve_response_code( $request ) === 200 ) {
 				//If its the plug-in object, unserialize and store for 12 hours.
-				$plugin_obj = ( 'plugin_info' == $action ? unserialize( $request['body'] ) : $request['body'] );
+				$plugin_obj = ( 'plugin_info' == $action ? self::safe_unserialize( wp_remote_retrieve_body( $request ) ) : wp_remote_retrieve_body( $request ) );
+
+				if ( 'plugin_info' == $action && ! is_object( $plugin_obj ) ) {
+					//Don't try again for 5 minutes
+					set_site_transient( $key, '', 5 * 60 );
+					return false;
+				}
 
 				if ( $this->name && empty( $plugin_obj->name ) ) {
 					$plugin_array = (array) $plugin_obj;

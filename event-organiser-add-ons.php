@@ -133,13 +133,15 @@ class EventOrganiser_Add_Ons_Page extends EventOrganiser_Admin_Page {
 
 	static function get_addons() {
 
-		if ( false === ( $addons = get_transient( 'eventorganiser_add_ons' ) ) || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
-			$addons = wp_remote_get( 'http://wp-event-organiser.com/addons.json', array( 'sslverify' => false ) );
+		if ( false === ( $addons = get_transient( 'eventorganiser_add_ons_v2' ) ) || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+			// HTTPS with normal certificate verification: the response is rendered in an admin page.
+			$addons = wp_remote_get( 'https://wp-event-organiser.com/addons.json', array( 'timeout' => 10 ) );
 
 			if ( ! is_wp_error( $addons ) ) {
-				if ( isset( $addons['body'] ) && strlen( $addons['body'] ) > 0 ) {
+				if ( 200 === (int) wp_remote_retrieve_response_code( $addons )
+					&& isset( $addons['body'] ) && strlen( $addons['body'] ) > 0 ) {
 					$addons = wp_remote_retrieve_body( $addons );
-					set_transient( 'eventorganiser_add_ons', $addons, 24 * 60 * 60 );
+					set_transient( 'eventorganiser_add_ons_v2', $addons, 24 * 60 * 60 );
 				} else {
 					return new WP_Error( 'eo-addon-feed', 'Unknown error message' );
 				}
@@ -152,10 +154,24 @@ class EventOrganiser_Add_Ons_Page extends EventOrganiser_Admin_Page {
 			$addons = json_decode( $addons, true );
 		}
 
+		if ( ! is_array( $addons ) ) {
+			return new WP_Error( 'eo-addon-feed', 'Unexpected add-on feed format' );
+		}
+
 		return $addons;
 	}
 
 	static function print_addon( $addon ) {
+		$addon = wp_parse_args(
+			(array) $addon,
+			array(
+				'title'       => '',
+				'url'         => '',
+				'thumbnail'   => '',
+				'status'      => '',
+				'description' => '',
+			)
+		);
 		?>
 		<div class="eo-addon">
 
@@ -173,7 +189,7 @@ class EventOrganiser_Add_Ons_Page extends EventOrganiser_Admin_Page {
 				<span class="eo-coming-soon-text">Coming Soon</span>
 			<?php endif; ?>
 			
-			<p><?php echo $addon['description'];?></p>
+			<p><?php echo wp_kses_post( $addon['description'] );?></p>
 			
 			<span style="height:20px;display:block"></span>
 			<?php if ( $addon['url'] ) : ?>

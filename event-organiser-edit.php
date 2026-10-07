@@ -457,7 +457,8 @@ function eventorganiser_details_save( $post_id ) {
 		$in_ex[$key] = array();
 		$arr         = explode( ',', sanitize_text_field( $raw_data[$key] ) );
 
-		if ( ! empty( $arr ) ) {
+		//An unparseable start leaves nothing to take the time from; eo_update_event() rejects it below.
+		if ( $start && ! empty( $arr ) ) {
 			//Go through each included/exclude date and convert it into a datetime (with the event's time)
 			foreach ( $arr as $date ) {
 				if ( $date_obj = eo_check_datetime( 'Y-m-d', trim( $date ) ) ) {
